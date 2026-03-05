@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calculateur de Moyenne</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0d0f;
+      --surface: #16161a;
+      --border: #2a2a30;
+      --accent: #e8c547;
+      --accent-dim: rgba(232, 197, 71, 0.12);
+      --text: #f0ece4;
+      --muted: #6b6b78;
+      --success: #5ee7a0;
+      --error: #ff6b6b;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      overflow-x: hidden;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(232,197,71,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(232,197,71,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    /* Header */
+    .header {
+      margin-bottom: 2.5rem;
+      opacity: 0;
+      transform: translateY(-16px);
+      animation: fadeUp 0.6s ease forwards;
+    }
+
+    .label-tag {
+      display: inline-block;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 3px 10px;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2.2rem, 5vw, 3rem);
+      line-height: 1.1;
+      font-weight: 400;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .subtitle {
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* Card */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2rem;
+      position: relative;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.6s ease 0.15s forwards;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+    }
+
+    /* Inputs */
+    .inputs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .input-group {
+      position: relative;
+    }
+
+    .input-group:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+    }
+
+    .input-label {
+      display: block;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .input-number {
+      display: block;
+      font-size: 0.55rem;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 0.3rem;
+      text-transform: uppercase;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 1.1rem;
+      padding: 0.75rem 1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -moz-appearance: textfield;
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+    }
+
+    input[type="number"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    input[type="number"].filled {
+      border-color: rgba(232,197,71,0.4);
+    }
+
+    input[type="number"].error-input {
+      border-color: var(--error);
+    }
+
+    /* Progress bar */
+    .progress-bar {
+      height: 3px;
+      background: var(--border);
+      margin-bottom: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.65rem;
+      color: var(--muted);
+      margin-top: 0.4rem;
+    }
+
+    /* Button */
+    .btn {
+      width: 100%;
+      background: var(--accent);
+      color: #0d0d0f;
+      border: none;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 1rem;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: white;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(232,197,71,0.3); }
+    .btn:hover::after { opacity: 0.08; }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Reset btn */
+    .btn-reset {
+      width: 100%;
+      margin-top: 0.75rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.65rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-reset:hover { border-color: var(--muted); color: var(--text); }
+
+    /* Result */
+    .result {
+      margin-top: 1.5rem;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      padding: 1.5rem;
+      display: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .result.visible {
+      display: block;
+      animation: resultReveal 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .result::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at top left, var(--accent-dim), transparent 60%);
+      pointer-events: none;
+    }
+
+    .result-header {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .result-value {
+      font-family: 'DM Serif Display', serif;
+      font-size: 3.5rem;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .result-breakdown {
+      font-size: 0.7rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .result-breakdown span {
+      color: var(--text);
+    }
+
+    /* Error message */
+    .error-msg {
+      font-size: 0.7rem;
+      color: var(--error);
+      margin-top: 1rem;
+      display: none;
+      padding: 0.6rem 0.75rem;
+      border-left: 2px solid var(--error);
+      background: rgba(255,107,107,0.07);
+    }
+
+    .error-msg.visible { display: block; animation: fadeUp 0.3s ease forwards; }
+
+    /* Animations */
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes resultReveal {
+      from { opacity: 0; transform: translateX(-8px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 1.5rem;
+      text-align: center;
+      font-size: 0.6rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      opacity: 0;
+      animation: fadeUp 0.6s ease 0.4s forwards;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="label-tag">Outil de calcul</div>
+      <h1>Calculateur de<br><em>Moyenne</em></h1>
+      <p class="subtitle">// Entrez 5 valeurs numériques</p>
+    </div>
+
+    <div class="card">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+      </div>
+      <div class="progress-label">
+        <span id="filledCount">0 / 5 nombres saisis</span>
+        <span id="progressPct">0%</span>
+      </div>
+
+      <br/>
+
+      <div class="inputs-grid" id="inputsGrid"></div>
+
+      <button class="btn" id="calcBtn" onclick="calculate()" disabled>
+        ▶ Calculer la moyenne
+      </button>
+      <button class="btn-reset" onclick="resetAll()">↺ Réinitialiser</button>
+
+      <div class="error-msg" id="errorMsg"></div>
+
+      <div class="result" id="result">
+        <div class="result-header">// Résultat</div>
+        <div class="result-value" id="resultValue">—</div>
+        <div class="result-breakdown" id="resultBreakdown"></div>
+      </div>
+    </div>
+
+    <div class="footer">© Calculateur de Moyenne — 2026</div>
+  </div>
+
+  <script>
+    const NUM_INPUTS = 5;
+    const inputs = [];
+
+    // Build inputs
+    const grid = document.getElementById('inputsGrid');
+    for (let i = 0; i < NUM_INPUTS; i++) {
+      const group = document.createElement('div');
+      group.className = 'input-group';
+
+      group.innerHTML = `
+        <div class="input-number">// ${String(i+1).padStart(2,'0')}</div>
+        <label class="input-label" for="n${i}">Nombre ${i+1}</label>
+        <input type="number" id="n${i}" placeholder="0" step="any" oninput="onInput()" />
+      `;
+
+      grid.appendChild(group);
+      inputs.push(group.querySelector('input'));
+    }
+
+    function onInput() {
+      const filled = inputs.filter(inp => inp.value.trim() !== '').length;
+      const pct = Math.round((filled / NUM_INPUTS) * 100);
+
+      document.getElementById('progressFill').style.width = pct + '%';
+      document.getElementById('filledCount').textContent = `${filled} / ${NUM_INPUTS} nombres saisis`;
+      document.getElementById('progressPct').textContent = pct + '%';
+      document.getElementById('calcBtn').disabled = (filled < NUM_INPUTS);
+
+      inputs.forEach(inp => {
+        inp.classList.remove('filled', 'error-input');
+        if (inp.value.trim() !== '') inp.classList.add('filled');
+      });
+
+      // Hide result + error on new input
+      document.getElementById('result').classList.remove('visible');
+      hideError();
+    }
+
+    function calculate() {
+      hideError();
+      const vals = [];
+      let hasError = false;
+
+      inputs.forEach(inp => {
+        const v = inp.value.trim();
+        if (v === '' || isNaN(parseFloat(v))) {
+          inp.classList.add('error-input');
+          hasError = true;
+        } else {
+          inp.classList.remove('error-input');
+          vals.push(parseFloat(v));
+        }
+      });
+
+      if (hasError) {
+        showError('⚠ Veuillez entrer des valeurs numériques valides.');
+        return;
+      }
+
+      const sum = vals.reduce((a, b) => a + b, 0);
+      const avg = sum / vals.length;
+
+      document.getElementById('resultValue').textContent = formatNum(avg);
+
+      const breakdown = `
+        <span>Somme</span> = ${formatNum(sum)}<br/>
+        <span>Nombre de valeurs</span> = ${vals.length}<br/>
+        <span>Formule</span> = (${vals.map(v => formatNum(v)).join(' + ')}) ÷ ${vals.length}
+      `;
+      document.getElementById('resultBreakdown').innerHTML = breakdown;
+
+      const resultEl = document.getElementById('result');
+      resultEl.classList.remove('visible');
+      void resultEl.offsetWidth; // reflow for re-animation
+      resultEl.classList.add('visible');
+    }
+
+    function formatNum(n) {
+      // Show up to 6 decimals, strip trailing zeros
+      return parseFloat(n.toFixed(6)).toString();
+    }
+
+    function resetAll() {
+      inputs.forEach(inp => {
+        inp.value = '';
+        inp.classList.remove('filled', 'error-input');
+      });
+      document.getElementById('progressFill').style.width = '0%';
+      document.getElementById('filledCount').textContent = '0 / 5 nombres saisis';
+      document.getElementById('progressPct').textContent = '0%';
+      document.getElementById('calcBtn').disabled = true;
+      document.getElementById('result').classList.remove('visible');
+      hideError();
+      inputs[0].focus();
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = msg;
+      el.classList.add('visible');
+    }
+
+    function hideError() {
+      document.getElementById('errorMsg').classList.remove('visible');
+    }
+
+    // Allow Enter key to move between fields
+    inputs.forEach((inp, i) => {
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (i < inputs.length - 1) inputs[i + 1].focus();
+          else calculate();
+        }
+      });
+    });
+
+    // Focus first input on load
+    inputs[0].focus();
+  </script>
+</body>
+</html>

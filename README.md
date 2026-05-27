@@ -1,2 +1,0 @@
-# mon-app
-Exemple éducatif 
